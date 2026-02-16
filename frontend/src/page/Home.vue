@@ -17,6 +17,7 @@ const fitnessDays = ref<Record<number, number>>({});
 const todayTrainingId = ref<number | null>(null);
 const showMuscleDialog = ref(false);
 const selectedMuscles = ref<string[]>([]);
+const selectedDate = ref<string | null>(null);
 
 const loadMonthlyFitnessData = async (year: number, month: number) => {
     try {
@@ -61,6 +62,7 @@ const onDayClick = (e: { date: string, id: number | null }) => {
         router.push(`/training/${id}`);
     } else {
         // No record for this day (present or past)
+        selectedDate.value = date;
         showMuscleDialog.value = true;
     }
 };
@@ -77,7 +79,12 @@ const handleMuscleToggle = (muscle: string) => {
 const startTraining = () => {
     appStore.setPrimaryMuscles(selectedMuscles.value.length ? selectedMuscles.value : null);
     showMuscleDialog.value = false;
-    router.push('/training');
+    
+    if (selectedDate.value) {
+        router.push({ path: '/training', query: { date: selectedDate.value } });
+    } else {
+        router.push('/training');
+    }
 };
 
 const closeMuscleDialog = () => {
@@ -88,6 +95,7 @@ const handleStartTraining = () => {
     if (todayTrainingId.value) {
         router.push(`/training/${todayTrainingId.value}`);
     } else {
+        selectedDate.value = dayjs().format('YYYY-MM-DD');
         showMuscleDialog.value = true;
     }
 };

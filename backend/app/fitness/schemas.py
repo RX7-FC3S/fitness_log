@@ -4,9 +4,6 @@ from app.fitness.models import SetType
 from app.masterdata.models import MuscleGroup
 
 
-class FitnessDayStart(BaseModel):
-    primary_muscles: list[MuscleGroup] | None = None
-
 
 class FitnessSetCreate(BaseModel):
     fitness_day_id: int | None = None
@@ -17,6 +14,7 @@ class FitnessSetCreate(BaseModel):
     set_type: SetType = SetType.WORKING
     remark: str | None = None
     primary_muscles: list[MuscleGroup] | None = None
+    date: str | None = None
 
 
 class FitnessSetUpdate(BaseModel):

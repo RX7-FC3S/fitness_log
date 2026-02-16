@@ -9,7 +9,6 @@ from app.core.database import get_db
 from app.fitness import service
 from app.fitness.models import SetType
 from app.fitness.schemas import (
-    FitnessDayStart,
     FitnessSetCreate,
     FitnessSetRead,
     FitnessSetUpdate,
@@ -61,37 +60,39 @@ def get_init_data(
 
 
 @router.get("/api/fitness/fitness_day", tags=["Fitness Day"])
-def get_fitness_days_by_month(
+def get_fitness_day(
     year: int | None = None,
     month: int | None = None,
+    date: str | None = None,
     tz: str = Depends(require_timezone),
     db: Session = Depends(get_db),
-) -> dict[str, Any]:
-    """
-    Get training days for a specific month.
-    Frontend will handle calendar layout calculation.
-    Returns a mapping of day (1-31) to training day ID.
-    """
-    today = service.local_today(tz)
-    year = year or today.year
-    month = month or today.month
-    training_days = service.list_fitness_days_by_month(db=db, year=year, month=month)
-    return {
-        "training_days": {day.date.day: day.id for day in training_days},
-    }
-
-
-@router.get("/api/fitness/fitness_day/today", tags=["Fitness Day"])
-def get_today_fitness_day(
-    db: Session = Depends(get_db),
-    tz: str = Depends(require_timezone),
 ):
-    day = service.get_today_fitness_day(db, tz)
+    """
+    Unified endpoint for fitness days.
+    - If year/month: returns monthly map for calendar.
+    - If date: returns detail for that date.
+    - If no params: returns today's detail.
+    """
+    if year is not None and month is not None:
+        training_days = service.list_fitness_days_by_month(db=db, year=year, month=month)
+        return {"training_days": {day.date.day: day.id for day in training_days}}
+
+    if date:
+        try:
+            target_date = datetime.strptime(date, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format, expect YYYY-MM-DD")
+        day = service.get_fitness_day_by_date(db, target_date)
+    else:
+        day = service.get_today_fitness_day(db, tz)
+
     if day:
         day_model = service.get_fitness_day_by_id(db, day.id)
         return service.serialize_fitness_day_detail(day_model)
+
     return {
         "id": None,
+        "date": date or service.local_today(tz).isoformat(),
         "timezone": tz,
         "primary_muscles": [],
         "start_time": datetime.now(timezone.utc).isoformat(),
@@ -100,29 +101,22 @@ def get_today_fitness_day(
     }
 
 
-@router.post("/api/fitness/fitness_day/today/start", tags=["Fitness Day"])
-def start_today_fitness_day(
-    payload: FitnessDayStart,
+
+@router.put("/api/fitness/fitness_day/{day_id}/end", tags=["Fitness Day"])
+def finish_fitness_day(
+    day_id: int,
     db: Session = Depends(get_db),
     tz: str = Depends(require_timezone),
 ):
-    day = service.get_or_create_today_fitness_day(db, tz, payload.primary_muscles)
-    return service.serialize_fitness_day_detail(day)
-
-
-@router.put("/api/fitness/fitness_day/today/end", tags=["Fitness Day"])
-def finish_today_fitness_day(
-    db: Session = Depends(get_db),
-    tz: str = Depends(require_timezone),
-):
-    day = service.finish_today_fitness_day(db, tz)
+    """Finish a fitness day by ID."""
+    day = service.finish_fitness_day(db, day_id)
     if not day:
-        raise HTTPException(status_code=404, detail="Today's fitness day not found")
+        raise HTTPException(status_code=404, detail="Fitness day not found")
     return {"ok": True}
 
 
 @router.get("/api/fitness/fitness_day/{day_id}", tags=["Fitness Day"])
-def get_fitness_day_detail(day_id: int, db: Session = Depends(get_db)):
+def get_fitness_day_by_id(day_id: int, db: Session = Depends(get_db)):
     day = service.get_fitness_day_by_id(db=db, day_id=day_id)
     if not day:
         raise HTTPException(status_code=404, detail="Fitness day not found")

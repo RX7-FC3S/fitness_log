@@ -9,6 +9,7 @@ export function useTraining() {
     const appStore = useAppStore();
 
     const dayData = ref<FitnessDay | null>(null);
+    const targetDate = ref<string | null>(null);
 
     const resolvePrimaryMuscles = (): string[] => {
         if (dayData.value?.primaryMuscles?.length) {
@@ -24,18 +25,27 @@ export function useTraining() {
 
     const updateHeader = () => {
         const muscles = resolvePrimaryMuscles();
+        let title = "";
+
+        // Use date from data if it has an ID, otherwise prioritize targetDate
+        const displayDate = dayData.value?.id ? dayData.value.date : (targetDate.value || dayData.value?.date);
+
         if (muscles.length) {
-            appStore.setPageTitle(muscles.join(" + "));
-        } else {
-            appStore.setPageTitle("");
+            title = muscles.join(" + ");
         }
+
+        if (displayDate) {
+            title = `${displayDate}${title ? ' - ' + title : ''}`;
+        }
+
+        appStore.setPageTitle(title);
     };
 
     const loadData = async (dayId?: string | number) => {
         try {
             const data = dayId
                 ? await api.getFitnessDay(dayId)
-                : await api.getTodayFitnessDay();
+                : await api.getTodayFitnessDay(targetDate.value || undefined);
 
             dayData.value = data;
             updateHeader();
@@ -73,6 +83,7 @@ export function useTraining() {
             reps: Number(setData.reps),
             unit_id: Number(setData.unit_id),
             remark: "",
+            date: targetDate.value || undefined,
             primary_muscles: resolvePrimaryMuscles(),
         };
 
@@ -101,7 +112,11 @@ export function useTraining() {
     };
 
     const finishTraining = async () => {
-        await api.finishFitnessDay();
+        if (!dayData.value?.id) {
+            appStore.showToast("训练记录未创建");
+            return;
+        }
+        await api.finishFitnessDay(dayData.value.id);
         router.replace("/");
     };
 
@@ -114,5 +129,6 @@ export function useTraining() {
         deleteSet,
         updateSet,
         resolvePrimaryMuscles,
+        targetDate,
     };
 }

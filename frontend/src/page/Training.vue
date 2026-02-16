@@ -15,7 +15,8 @@ const {
     addSet,
     finishTraining,
     deleteSet,
-    updateSet
+    updateSet,
+    targetDate
 } = useTraining();
 
 const formValues = ref({
@@ -169,6 +170,13 @@ const setPageFooter = () => {
 onMounted(async () => {
     appStore.setPageTitle('');
     appStore.setFooterVisible(true);
+    
+    // Check for date query param
+    const dateParam = route.query.date as string;
+    if (dateParam) {
+        targetDate.value = dateParam;
+    }
+
     await loadData(route.params.id as string);
     setPageFooter();
     if (appStore.setTypes.length > 0 && appStore.setTypes[0]) {

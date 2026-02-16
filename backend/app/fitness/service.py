@@ -95,6 +95,7 @@ def serialize_fitness_day_detail(day: FitnessDay) -> dict:
 
     return {
         "id": day.id,
+        "date": day.date.isoformat() if day.date else None,
         "timezone": day.timezone,
         "primary_muscles": parse_primary_muscles(day.primary_muscles),
         "start_time": day.start_time.isoformat() if day.start_time else None,
@@ -111,17 +112,20 @@ def list_fitness_days_by_month(db: Session, year: int, month: int) -> list[Fitne
     return list(db.execute(stmt).scalars().all())
 
 
-def get_today_fitness_day(db: Session, tz: str) -> FitnessDay | None:
-    today = local_today(tz)
-    stmt = select(FitnessDay).where(FitnessDay.date == today)
+def get_fitness_day_by_date(db: Session, date_obj: date) -> FitnessDay | None:
+    stmt = select(FitnessDay).where(FitnessDay.date == date_obj)
     return db.execute(stmt).scalars().first()
 
 
-def get_or_create_today_fitness_day(
-    db: Session, tz: str, primary_muscles=None
-) -> FitnessDay:
+def get_today_fitness_day(db: Session, tz: str) -> FitnessDay | None:
     today = local_today(tz)
-    stmt = select(FitnessDay).where(FitnessDay.date == today)
+    return get_fitness_day_by_date(db, today)
+
+
+def get_or_create_fitness_day(
+    db: Session, tz: str, date_obj: date, primary_muscles=None
+) -> FitnessDay:
+    stmt = select(FitnessDay).where(FitnessDay.date == date_obj)
     existing_day = db.execute(stmt).scalars().first()
 
     if existing_day:
@@ -134,18 +138,33 @@ def get_or_create_today_fitness_day(
             db.refresh(existing_day)
         return existing_day
 
+    # For past dates, start_time and end_time should probably be set to something sensible.
+    # If it's today, we use current time. If it's past, we can use the date with some default time or just the date.
+    now = datetime.now(timezone.utc)
+    start_time = now
+    if date_obj < now.date():
+        # Set to 12:00 PM UTC of that date as a placeholder
+        start_time = datetime.combine(date_obj, datetime.min.time(), tzinfo=timezone.utc).replace(hour=12)
+
     new_day = FitnessDay(
         created_by=1,
         updated_by=1,
-        date=today,
+        date=date_obj,
         timezone=tz,
         primary_muscles=normalize_primary_muscle_selection(primary_muscles),
-        start_time=datetime.now(timezone.utc),
+        start_time=start_time,
     )
     db.add(new_day)
     db.commit()
     db.refresh(new_day)
     return new_day
+
+
+def get_or_create_today_fitness_day(
+    db: Session, tz: str, primary_muscles=None
+) -> FitnessDay:
+    today = local_today(tz)
+    return get_or_create_fitness_day(db, tz, today, primary_muscles)
 
 
 def finish_today_fitness_day(db: Session, tz: str) -> FitnessDay | None:
@@ -159,10 +178,38 @@ def finish_today_fitness_day(db: Session, tz: str) -> FitnessDay | None:
     return day
 
 
+def finish_fitness_day(db: Session, day_id: int) -> FitnessDay | None:
+    stmt = select(FitnessDay).where(FitnessDay.id == day_id)
+    day = db.execute(stmt).scalars().first()
+    if not day:
+        return None
+    
+    # If it's a past day, end_time should probably be near the start_time or same as start_time + some duration
+    # For simplicity, we just use current time if it's today, or start_time if it's past
+    if day.date < date.today():
+        day.end_time = day.start_time
+    else:
+        day.end_time = datetime.now(timezone.utc)
+        
+    day.updated_by = 1
+    db.commit()
+    db.refresh(day)
+    return day
+
+
 def create_fitness_set(db: Session, data: FitnessSetCreate, tz: str) -> FitnessSet:
     day_id = data.fitness_day_id
     if not day_id:
-        day = get_or_create_today_fitness_day(db, tz, data.primary_muscles)
+        if data.date:
+            try:
+                # Expecting format YYYY-MM-DD
+                target_date = date.fromisoformat(data.date)
+            except ValueError:
+                target_date = local_today(tz)
+        else:
+            target_date = local_today(tz)
+        
+        day = get_or_create_fitness_day(db, tz, target_date, data.primary_muscles)
         day_id = day.id
 
     new_set = FitnessSet(

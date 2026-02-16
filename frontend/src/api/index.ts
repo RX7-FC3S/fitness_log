@@ -11,8 +11,7 @@ import type {
   CreateFitnessSetPayload,
   UpdateFitnessSetPayload,
   CreateExercisePayload,
-  GetLogsParams,
-  StartFitnessDayPayload
+  GetLogsParams
 } from '@/types/fitness';
 
 dayjs.extend(utc);
@@ -86,12 +85,11 @@ const api = {
   getFitnessDaysByMonth: (year?: number, month?: number): Promise<{ training_days: Record<number, number> }> =>
     apiInstance.get('/api/fitness/fitness_day', { params: { year, month } }).then(res => res.data),
   getFitnessDay: (dayId: string | number): Promise<FitnessDay> => apiInstance.get(`/api/fitness/fitness_day/${dayId}`).then(res => mapFitnessDay(res.data)),
-  getTodayFitnessDay: (): Promise<FitnessDay> => apiInstance.get('/api/fitness/fitness_day/today').then(res => mapFitnessDay(res.data)),
+  getTodayFitnessDay: (date?: string): Promise<FitnessDay> => apiInstance.get('/api/fitness/fitness_day', { params: { date } }).then(res => mapFitnessDay(res.data)),
   createFitnessSet: (data: CreateFitnessSetPayload): Promise<FitnessSet> => apiInstance.post('/api/fitness/fitness_set/create', data).then(res => mapSet(res.data)),
   updateFitnessSet: (setId: string | number, data: UpdateFitnessSetPayload): Promise<FitnessSet> => apiInstance.put(`/api/fitness/fitness_set/${setId}`, data).then(res => mapSet(res.data)),
   deleteFitnessSet: (setId: string | number): Promise<void> => apiInstance.delete(`/api/fitness/fitness_set/${setId}`).then(res => res.data),
-  finishFitnessDay: (): Promise<void> => apiInstance.put('/api/fitness/fitness_day/today/end').then(res => res.data),
-  startFitnessDay: (payload: StartFitnessDayPayload): Promise<FitnessDay> => apiInstance.post('/api/fitness/fitness_day/today/start', payload).then(res => mapFitnessDay(res.data)),
+  finishFitnessDay: (dayId: string | number): Promise<void> => apiInstance.put(`/api/fitness/fitness_day/${dayId}/end`).then(res => res.data),
   getLogs: (params: GetLogsParams): Promise<FitnessLogDay[]> => apiInstance.get('/api/fitness/fitness_logs', { params }).then(res => res.data.map((d: any) => ({
     ...d,
     sets: d.sets.map(mapSet)

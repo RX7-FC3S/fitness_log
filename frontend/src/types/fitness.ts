@@ -100,12 +100,9 @@ export interface CreateExercisePayload {
     target_muscle: TargetMuscleGroup | string;
 }
 
+
 export interface GetLogsParams {
     from_date?: string;
     to_date?: string;
     exercise_name?: string;
-}
-
-export interface StartFitnessDayPayload {
-    primary_muscles: (TargetMuscleGroup | string)[] | null;
 }
