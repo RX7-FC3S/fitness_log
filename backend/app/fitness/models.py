@@ -32,7 +32,7 @@ class FitnessSet(BaseModel):
     __tablename__ = "fitness_set"
 
     fitness_day_id: Mapped[int] = mapped_column(
-        ForeignKey("fitness_day.id", ondelete="CASCADE"), nullable=False, index=True
+        ForeignKey("fitness_day.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     fitness_day: Mapped["FitnessDay"] = relationship(back_populates="sets")
 
