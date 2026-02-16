@@ -1,0 +1,11 @@
+.scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    scrollbar-gutter: stable;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+}

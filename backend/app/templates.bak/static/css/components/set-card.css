@@ -1,0 +1,48 @@
+.set-card {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+}
+
+.set-card-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+.set-details {
+    font-size: var(--fs-lg);
+    /* Reduced from XL to be more balanced with surroundings */
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1.4;
+    display: flex;
+    align-items: baseline;
+    gap: 0.15rem;
+}
+
+.set-details span {
+    font-size: var(--fs-lg);
+    /* Match the numbers */
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-right: 0.1rem;
+}
+
+.set-remark-edit {
+    font-size: var(--fs-sm);
+    color: var(--text-secondary);
+    width: 100%;
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    outline: none;
+    margin-top: 0.25rem;
+    height: auto;
+}
+
+.set-actions {
+    display: flex;
+    gap: 0.5rem;
+}

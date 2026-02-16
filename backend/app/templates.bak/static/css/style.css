@@ -1,0 +1,22 @@
+/* Core */
+@import "./root.css";
+
+/* Layouts */
+@import "./layouts/main.css";
+@import "./layouts/header.css";
+@import "./layouts/footer.css";
+
+/* Components */
+@import "./components/buttons.css";
+@import "./components/badges.css";
+@import "./components/cards.css";
+@import "./components/forms.css";
+@import "./components/modals.css";
+@import "./components/calendar.css";
+@import "./components/scroll-area.css";
+@import "./components/set-card.css";
+
+/* Pages */
+/* Add page-specific styles here, e.g.:
+@import "./pages/training.css";
+*/

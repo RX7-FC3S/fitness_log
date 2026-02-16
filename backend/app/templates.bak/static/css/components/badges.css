@@ -1,0 +1,28 @@
+.set-type-badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.4rem;
+    font-size: var(--fs-xs);
+    /* Increased slightly from XXS for balance */
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-warmup {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.badge-working {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.badge-drop {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+}
+
+.badge-failure {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
